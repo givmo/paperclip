@@ -137,13 +137,12 @@ module Paperclip
       def flush_writes #:nodoc:
         @queued_for_write.each do |style, file|
           begin
-            log("saving #{path(style)}")
-            AWS::S3::S3Object.store(path(style),
+            style_path = path(style)
+            log("saving #{style_path}")
+            AWS::S3::S3Object.store(style_path,
                                     file,
                                     bucket_name,
-                                    {:content_type => instance_read(:content_type),
-                                     :access => @s3_permissions,
-                                    }.merge(@s3_headers))
+                                    {:access => @s3_permissions}.merge(@s3_headers))
           rescue AWS::S3::ResponseError => e
             raise
           end

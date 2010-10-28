@@ -49,6 +49,7 @@ module Paperclip
       @queued_for_write  = {}
       @errors            = {}
       @dirty             = false
+      @was_dirty         = false
 
       initialize_storage
     end
@@ -96,6 +97,7 @@ module Paperclip
       instance_write(:updated_at,      Time.now)
 
       @dirty = true
+      @was_dirty = true
 
       post_process
 
@@ -138,6 +140,11 @@ module Paperclip
     # Returns true if there are changes that need to be saved.
     def dirty?
       @dirty
+    end
+
+    # Returns true if a new file was assigned.
+    def was_dirty?
+      @was_dirty
     end
 
     # Saves the file, if there are no errors. If there are, it flushes them to
@@ -213,7 +220,7 @@ module Paperclip
     # thumbnails forcefully, by reobtaining the original file and going through
     # the post-process again.
     def reprocess!
-      new_original = Tempfile.new("paperclip-reprocess")
+      new_original = Tempfile.new("paperclip-reprocess.#{File.extname(original_filename)}")
       new_original.binmode
       if old_original = to_file(:original)
         new_original.write( old_original.respond_to?(:get) ? old_original.get : old_original.read )

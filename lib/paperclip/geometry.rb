@@ -6,8 +6,8 @@ module Paperclip
 
     # Gives a Geometry representing the given height and width
     def initialize width = nil, height = nil, modifier = nil
-      @height = height.to_f
       @width  = width.to_f
+      @height = height.to_f
       @modifier = modifier
     end
 
@@ -16,12 +16,23 @@ module Paperclip
     def self.from_file file
       file = file.path if file.respond_to? "path"
       geometry = begin
-                   Paperclip.run("identify", "-format %wx%h :file", :file => "#{file}[0]")
+                   Paperclip.run("identify", "-format :format :file", :file => "#{file}[0]", :format => '%wx%h_%[EXIF:Orientation]')
                  rescue PaperclipCommandLineError
                    ""
                  end
-      parse(geometry) ||
+      parse_from_file(geometry) ||
         raise(NotIdentifiedByImageMagickError.new("#{file} is not recognized by the 'identify' command."))
+    end
+
+    # Parses a "WxH" formatted string, where W is the width and H is the height.
+    def self.parse_from_file string
+      if match = (string && string.match(/\b(\d*)x(\d*)_(\d*)/i))
+        width, height, orientation = match[1], match[2], match[3]
+        if orientation.length > 0 && orientation.to_i >= 5
+          width, height = match[2], match[1]
+        end
+        Geometry.new(width, height)
+      end
     end
 
     # Parses a "WxH" formatted string, where W is the width and H is the height.
